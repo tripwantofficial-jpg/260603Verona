@@ -79,6 +79,10 @@
   .ovl:hover{background:#EBEBED;border-color:rgba(0,0,0,.14)}
   .ovl b{font-family:var(--display);font-style:normal;font-weight:600;color:var(--ink-mute);margin-right:2px;font-size:12px}
   .ovldot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+  /* 전체지도: 줌인하면 도시명 라벨 표시 */
+  .lmap-ov .leaflet-tooltip.ovtip{display:none;background:rgba(255,255,255,.94);border:1px solid rgba(0,0,0,.10);border-radius:6px;color:var(--ink);font-family:var(--kr);font-size:10.5px;font-weight:700;line-height:1.2;padding:2px 7px;box-shadow:0 1px 4px rgba(0,0,0,.10);pointer-events:none;white-space:nowrap}
+  .lmap-ov.labels-on .leaflet-tooltip.ovtip{display:block}
+  .leaflet-tooltip.ovtip:before{display:none!important;border:none!important}
   .card{scroll-margin-top:80px}
   .card.flash{box-shadow:0 0 0 2px var(--ink),0 22px 40px -22px rgba(0,0,0,.45)}
   #toTop{position:fixed;right:20px;bottom:22px;z-index:60;width:44px;height:44px;border-radius:50%;border:none;background:rgba(29,29,31,.88);color:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 8px 20px -6px rgba(0,0,0,.28);opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .3s,transform .3s,background .15s;backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px)}
@@ -526,13 +530,17 @@ function initOverviewMap(){
       const color=SECCOLOR[p.g]||"#6E1423";
       const goCard=()=>{const c=document.getElementById(p.cid); if(c){c.scrollIntoView({behavior:"smooth",block:"center"}); c.classList.add("flash"); setTimeout(()=>c.classList.remove("flash"),1500);}};
       const mk=L.circleMarker(ll,{radius:6,color:"#fff",weight:1.8,fillColor:color,fillOpacity:1}).addTo(map);
-      mk.bindTooltip(`<b>${p.short}</b>`,{className:"mtip",direction:"top",offset:[0,-6]});
+      mk.bindTooltip(p.short,{permanent:true,direction:"top",className:"ovtip",offset:[0,-7]});
       mk.on("click",goCard);
       pts.push(ll);
     });
     L.marker(VER,{icon:L.divIcon({className:"",html:'<div class="vmark">★</div>',iconSize:[26,26],iconAnchor:[13,13]}),zIndexOffset:1000}).addTo(map)
       .bindTooltip("베로나",{permanent:true,direction:"top",className:"vtip",offset:[0,-12]});
     map.fitBounds(pts,{padding:[42,42]});
+    // 초기 줌보다 +1 이상 확대했을 때만 도시명 라벨 표시
+    const labelZoom=map.getZoom()+1;
+    const syncLabels=()=>el.classList.toggle("labels-on",map.getZoom()>=labelZoom);
+    map.on("zoomend",syncLabels); syncLabels();
     const ResetCtl=L.Control.extend({options:{position:"topright"},onAdd:function(){
       const b=L.DomUtil.create("a","lmap-btn lmap-reset"); b.href="#"; b.title="베로나 기준으로 되돌리기"; b.innerHTML="★";
       L.DomEvent.disableClickPropagation(b);
